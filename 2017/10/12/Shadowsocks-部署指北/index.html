@@ -5,16 +5,16 @@
   
   <title>Shadowsocks 部署指北 | Weblog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="这篇文章讲的是 Shadowsocks 在服务器端的部署。 准备：    一台 KVM 的 VPS。如果你不知道什么是 KVM，直接用 Vultr 或者 DigitalOcean。    VPS 系统选择 Ubuntu 16.04 x64。 本教程默认读者拥有基本的 Linux 操作基础。">
+  <meta name="description" content="本文主讲 Shadowsocks 在服务器端的部署。 使用 shadowsocks-libev + simple-obfs + bbr + 一些基本优化，这个组合，能够达到白天看 youtube 1080p 不卡，晚上看 720p 不卡，日常使用完全没有问题。  shadowsocks-libev，是 Shadowsocks 的一个版本，性能较好。 simple-obfs，是 Shadowsoc">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Shadowsocks 部署指北">
 <meta property="og:url" content="https://summerlve.github.io/2017/10/12/Shadowsocks-部署指北/index.html">
 <meta property="og:site_name" content="Weblog">
-<meta property="og:description" content="这篇文章讲的是 Shadowsocks 在服务器端的部署。 准备：    一台 KVM 的 VPS。如果你不知道什么是 KVM，直接用 Vultr 或者 DigitalOcean。    VPS 系统选择 Ubuntu 16.04 x64。 本教程默认读者拥有基本的 Linux 操作基础。">
-<meta property="og:updated_time" content="2017-10-12T15:59:35.000Z">
+<meta property="og:description" content="本文主讲 Shadowsocks 在服务器端的部署。 使用 shadowsocks-libev + simple-obfs + bbr + 一些基本优化，这个组合，能够达到白天看 youtube 1080p 不卡，晚上看 720p 不卡，日常使用完全没有问题。  shadowsocks-libev，是 Shadowsocks 的一个版本，性能较好。 simple-obfs，是 Shadowsoc">
+<meta property="og:updated_time" content="2017-10-13T11:56:27.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Shadowsocks 部署指北">
-<meta name="twitter:description" content="这篇文章讲的是 Shadowsocks 在服务器端的部署。 准备：    一台 KVM 的 VPS。如果你不知道什么是 KVM，直接用 Vultr 或者 DigitalOcean。    VPS 系统选择 Ubuntu 16.04 x64。 本教程默认读者拥有基本的 Linux 操作基础。">
+<meta name="twitter:description" content="本文主讲 Shadowsocks 在服务器端的部署。 使用 shadowsocks-libev + simple-obfs + bbr + 一些基本优化，这个组合，能够达到白天看 youtube 1080p 不卡，晚上看 720p 不卡，日常使用完全没有问题。  shadowsocks-libev，是 Shadowsocks 的一个版本，性能较好。 simple-obfs，是 Shadowsoc">
   
     <link rel="alternate" href="/atom.xml" title="Weblog" type="application/atom+xml">
   
@@ -52,9 +52,9 @@
       </nav>
       <nav id="sub-nav">
         
-          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="Flux RSS"></a>
         
-        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+        <a id="nav-search-btn" class="nav-icon" title="Rechercher"></a>
       </nav>
       <div id="search-form-wrap">
         <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://summerlve.github.io"></form>
@@ -85,14 +85,52 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <p>这篇文章讲的是 Shadowsocks 在服务器端的部署。</p>
-<p>准备：<br>    一台 KVM 的 VPS。如果你不知道什么是 KVM，直接用 Vultr 或者 DigitalOcean。<br>    VPS 系统选择 Ubuntu 16.04 x64。</p>
-<p>本教程默认读者拥有基本的 Linux 操作基础。</p>
+        <p><strong> 本文主讲 Shadowsocks 在服务器端的部署。</strong></p>
+<p>使用 shadowsocks-libev + simple-obfs + bbr + 一些基本优化，这个组合，能够达到白天看 youtube 1080p 不卡，晚上看 720p 不卡，日常使用完全没有问题。</p>
+<ul>
+<li>shadowsocks-libev，是 Shadowsocks 的一个版本，性能较好。</li>
+<li>simple-obfs，是 Shadowsocks 的一个插件，用来混淆，让科学上网更加隐蔽。</li>
+<li>bbr，是一个拥塞控制算法，加速我们科学上网的速度。</li>
+<li>一些基本优化，是优化了服务器的一些参数，也是为了加速翻墙。</li>
+</ul>
+<p>本文默认读者拥有基本的 Linux 操作基础。</p>
+<p>准备：  </p>
+<ul>
+<li>一台 KVM 的 VPS。如果你不知道什么是 KVM，直接用 Vultr 或者 DigitalOcean。  </li>
+<li>VPS 系统选择 Ubuntu 16.04 x64。  </li>
+</ul>
+<p><strong> 下面开始我们的安装流程: </strong></p>
+<p><strong> 首先 SSH 连接到服务器上。 </strong></p>
+<p><strong> 1. 安装 shadowsocks-libev </strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">sudo apt-get install software-properties-common -y</div><div class="line">sudo add-apt-repository ppa:max-c-lv/shadowsocks-libev</div><div class="line">sudo apt-get update</div><div class="line">sudo apt install shadowsocks-libev</div></pre></td></tr></table></figure>
+<p><strong> 2. 安装 simple-obfs </strong><br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">sudo apt-get install --no-install-recommends build-essential autoconf libtool libssl-dev libpcre3-dev libc-ares-dev libev-dev asciidoc xmlto automake</div><div class="line">git clone https://github.com/shadowsocks/simple-obfs.git</div><div class="line">cd simple-obfs</div><div class="line">git submodule update --init --recursive</div><div class="line">./autogen.sh</div><div class="line">./configure &amp;&amp; make</div><div class="line">sudo make install</div></pre></td></tr></table></figure></p>
+<p><strong> 3. 更新 Linux 内核，以安装 bbr，下面脚本的最后一行 reboot 是重启系统，系统重启完毕之后，再次 SSH 连接到服务器上。 </strong><br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">wget http://kernel.ubuntu.com/~kernel-ppa/mainline/v4.10.17/linux-image-4.10.17-041017-generic_4.10.17-041017.201705201051_amd64.deb</div><div class="line">dpkg -i linux-image-4.*.deb</div><div class="line">update-grub</div><div class="line">reboot</div></pre></td></tr></table></figure></p>
+<p><strong> 4. 开启 bbr </strong></p>
+<p>输入以下命令：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">uname -r</div></pre></td></tr></table></figure></p>
+<p>console 会显示 Linux 系统的内核版本，bbr需要内核版本 &gt;= 4.9，检查是否 &gt;= 4.9，满足条件就可以继续安装了。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">modprobe tcp_bbr</div><div class="line">echo "tcp_bbr" &gt;&gt; /etc/modules-load.d/modules.conf</div><div class="line">echo "net.core.default_qdisc=fq" &gt;&gt; /etc/sysctl.conf</div><div class="line">echo "net.ipv4.tcp_congestion_control=bbr" &gt;&gt; /etc/sysctl.conf</div><div class="line">sysctl -p</div></pre></td></tr></table></figure>
+<p>执行<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">sysctl net.ipv4.tcp_available_congestion_control</div><div class="line">sysctl net.ipv4.tcp_congestion_control</div></pre></td></tr></table></figure></p>
+<p>如果结果都有 bbr,<br>则证明你的内核已开启 bbr</p>
+<p>执行 lsmod | grep bbr, 看到有 tcp_bbr 模块即说明 bbr 已启动</p>
+<p><strong> 5. 配置Shadowsocks </strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">sudo vim /etc/shadowsocks-libev/config.json</div></pre></td></tr></table></figure>
+<p><strong> 配置文件模版如下： </strong><br><figure class="highlight json"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">&#123;</div><div class="line">    <span class="attr">"server"</span>:<span class="string">"&lt;# 你的服务器ip &gt;"</span>,</div><div class="line">    <span class="attr">"server_port"</span>: <span class="string">"&lt;# 你想开启的端口号 &gt;"</span>,</div><div class="line">    <span class="attr">"local_port"</span>:<span class="number">1080</span>,</div><div class="line">    <span class="attr">"password"</span>:<span class="string">"&lt;# 你想设置的密码 &gt;"</span>,</div><div class="line">    <span class="attr">"timeout"</span>:<span class="number">60</span>,</div><div class="line">    <span class="attr">"method"</span>:<span class="string">"chacha20-ietf"</span>,</div><div class="line">    <span class="attr">"plugin"</span>:<span class="string">"obfs-server"</span>,</div><div class="line">    <span class="attr">"plugin_opts"</span>:<span class="string">"obfs=http;fast-open;obfs-host=cloudflare.com"</span>,</div><div class="line">    <span class="attr">"fast_open"</span>:<span class="literal">true</span>,</div><div class="line">    <span class="attr">"workers"</span>: <span class="number">1000</span></div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>其中：<br>&lt;# 你的服务器ip &gt; 填写服务器的 IP 地址。<br>&lt;# 你想开启的端口号 &gt; 填写一个你想使用的端口号。<br>&lt;# 你想设置的密码 &gt; 填写一个你想使用的密码。</p>
+<p><strong> 6. 设置 Shadowsocks 自启动 </strong></p>
+<p>编辑 /etc/rc.local 文件：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">sudo vim /etc/rc.local</div></pre></td></tr></table></figure></p>
+<p>在：   </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">exit 0</div></pre></td></tr></table></figure>
+<p>这行之前插入：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">sudo systemctl start shadowsocks-libev</div></pre></td></tr></table></figure>
+<p>插入之后，/etc/rc.local 文件应该是这样的：<br><figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span>!/bin/sh -e</div><div class="line"><span class="meta">#</span></div><div class="line"><span class="meta">#</span> rc.local</div><div class="line"><span class="meta">#</span></div><div class="line"><span class="meta">#</span> This script is executed at the end of each multiuser runlevel.</div><div class="line"><span class="meta">#</span> Make sure that the script will "exit 0" on success or any other</div><div class="line"><span class="meta">#</span> value on error.</div><div class="line"><span class="meta">#</span></div><div class="line"><span class="meta">#</span> In order to enable or disable this script just change the execution</div><div class="line"><span class="meta">#</span> bits.</div><div class="line"><span class="meta">#</span></div><div class="line"><span class="meta">#</span> By default this script does nothing.</div><div class="line"></div><div class="line">sudo systemctl start shadowsocks-libev</div><div class="line"></div><div class="line">exit 0</div></pre></td></tr></table></figure></p>
+<p><strong> 7. 重启服务器, 开启Shadowsocks </strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">sudo systemctl reboot</div></pre></td></tr></table></figure>
+<p><strong> Shadowsocks 安装完毕 </strong></p>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://summerlve.github.io/2017/10/12/Shadowsocks-部署指北/" data-id="cj8onh1zg0000xqwykxcgf2z8" class="article-share-link">Share</a>
+      <a data-url="https://summerlve.github.io/2017/10/12/Shadowsocks-部署指北/" data-id="cj8pu8khb0000wfwyfuu28xv4" class="article-share-link">Partager</a>
       
       
     </footer>
@@ -102,7 +140,7 @@
 <nav id="article-nav">
   
     <a href="/2017/10/12/v2ray-部署指北/" id="article-nav-newer" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">Newer</strong>
+      <strong class="article-nav-caption">Récent</strong>
       <div class="article-nav-title">
         
           v2ray 部署指北
@@ -140,7 +178,7 @@
   
     
   <div class="widget-wrap">
-    <h3 class="widget-title">Recent Posts</h3>
+    <h3 class="widget-title">Articles récents</h3>
     <div class="widget">
       <ul>
         
@@ -165,7 +203,7 @@
   <div class="outer">
     <div id="footer-info" class="inner">
       &copy; 2017 Summerlve<br>
-      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+      Propulsé by <a href="http://hexo.io/" target="_blank">Hexo</a>
     </div>
   </div>
 </footer>
